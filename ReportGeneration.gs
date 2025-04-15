@@ -144,11 +144,10 @@ function generateReport(reportSheet, stats) {
       return;
   }
   
-  // Подготовка заголовков - теперь включаем и абитуриентов, и заявления
-  reportSheet.getRange(1, 1, 1, 8).setValues([[
+  // Подготовка заголовков - убираем дублирующие столбцы заявлений
+  reportSheet.getRange(1, 1, 1, 6).setValues([[
       'Код', 'Направление', 'Профиль', 
-      'Абитуриенты (Очная)', 'Заявления (Очная)', 
-      'Абитуриенты (Заочная)', 'Заявления (Заочная)', 
+      'Абитуриенты (Очная)', 'Абитуриенты (Заочная)', 
       'Абитуриенты (Всего)'
   ]]);
   
@@ -173,9 +172,7 @@ function generateReport(reportSheet, stats) {
         directionData.name,
         "--- ВСЕГО по направлению ---",
         directionData.applicants.fullTime,
-        directionData.applications.fullTime, // Добавляем кол-во заявлений
         directionData.applicants.partTime,
-        directionData.applications.partTime, // Добавляем кол-во заявлений
         directionData.applicants.total
     ]);
     
@@ -189,19 +186,17 @@ function generateReport(reportSheet, stats) {
           "", // Пусто для названия направления
           profile,
           profileData.applicants.fullTime,
-          profileData.applications.fullTime,
           profileData.applicants.partTime,
-          profileData.applications.partTime,
           profileData.applicants.total
         ]);
     }
     // Добавляем пустую строку для визуального разделения направлений
-    data.push(Array(8).fill("")); 
+    data.push(Array(6).fill("")); 
   }
   
   // Записываем все данные одним запросом (оптимизация)
   if (data.length > 0) {
-    reportSheet.getRange(2, 1, data.length, 8).setValues(data);
+    reportSheet.getRange(2, 1, data.length, 6).setValues(data);
     // Обновляем счетчик строк
     row += data.length;
   } else {
@@ -211,10 +206,10 @@ function generateReport(reportSheet, stats) {
   
   // Добавляем итоговую строку по всем абитуриентам
   const totalRow = row;
-  reportSheet.getRange(totalRow, 1, 1, 8).setValues([
+  reportSheet.getRange(totalRow, 1, 1, 6).setValues([
     ["ИТОГО", "", "", 
-     stats.totalApplicants.fullTime, "", // Сумма заявлений здесь не нужна
-     stats.totalApplicants.partTime, "", 
+     stats.totalApplicants.fullTime,
+     stats.totalApplicants.partTime, 
      stats.totalApplicants.total
     ]
   ]);
@@ -230,7 +225,7 @@ function generateReport(reportSheet, stats) {
  * @param {number} totalRow - Номер строки с итогами
  */
 function formatReport(sheet, totalRow) {
-  const lastCol = 8; // У нас теперь 8 столбцов
+  const lastCol = 6; // Теперь у нас 6 столбцов
   
   // Форматирование заголовков
   const headerRange = sheet.getRange(1, 1, 1, lastCol);
