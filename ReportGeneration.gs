@@ -12,6 +12,10 @@ function calculateStats(students) {
   const stats = {
     totalApplicants: { fullTime: 0, partTime: 0, total: 0 },
     byDirection: {}, // Статистика по каждому направлению
+    priorityInfo09_03_02: { // Информация о приоритетных заявлениях для 09.03.02
+      total: { fullTime: 0, partTime: 0, total: 0 },
+      profiles: {}  // Будет содержать счетчики по каждому профилю
+    }
     // Можно добавить другие виды статистики по необходимости (факультеты, документы и т.д.)
   };
 
@@ -72,6 +76,32 @@ function calculateStats(students) {
       if (direction.priority <= 5) {
         directionStats.byPriority[direction.priority]++;
       }
+
+      // --- Добавлено: Подсчет приоритетных заявлений для 09.03.02 ---
+      if (code === "09.03.02" && direction.priority === 1) {
+        // Обработка общего счетчика приоритетных заявлений
+        if (student.form === "очная") {
+          stats.priorityInfo09_03_02.total.fullTime++;
+        } else {
+          stats.priorityInfo09_03_02.total.partTime++;
+        }
+        stats.priorityInfo09_03_02.total.total++;
+        
+        // Обработка счетчика по профилям для приоритетных заявлений
+        if (!stats.priorityInfo09_03_02.profiles[profile]) {
+          stats.priorityInfo09_03_02.profiles[profile] = { 
+            fullTime: 0, partTime: 0, total: 0 
+          };
+        }
+        
+        if (student.form === "очная") {
+          stats.priorityInfo09_03_02.profiles[profile].fullTime++;
+        } else {
+          stats.priorityInfo09_03_02.profiles[profile].partTime++;
+        }
+        stats.priorityInfo09_03_02.profiles[profile].total++;
+      }
+      // --- Конец добавленного кода ---
     });
   });
 
@@ -176,6 +206,32 @@ function generateReport(reportSheet, stats) {
         directionData.applicants.total
     ]);
     
+    // Добавляем строку с приоритетными заявлениями для 09.03.02
+    if (code === "09.03.02") {
+      data.push([
+        "", 
+        "",
+        "--- В том числе ПРИОРИТЕТНЫЕ (Приоритет 1) ---",
+        stats.priorityInfo09_03_02.total.fullTime,
+        stats.priorityInfo09_03_02.total.partTime,
+        stats.priorityInfo09_03_02.total.total
+      ]);
+      
+      // Добавляем строки по профилям с приоритетными заявлениями
+      const priorityProfiles = Object.keys(stats.priorityInfo09_03_02.profiles).sort();
+      for (const profile of priorityProfiles) {
+        const profileData = stats.priorityInfo09_03_02.profiles[profile];
+        data.push([
+          "", 
+          "",
+          `${profile} (Приоритет 1)`,
+          profileData.fullTime,
+          profileData.partTime,
+          profileData.total
+        ]);
+      }
+    }
+    
     // Сортируем профили по алфавиту
     const sortedProfiles = Object.keys(directionData.profiles).sort();
     
@@ -252,8 +308,15 @@ function formatReport(sheet, totalRow) {
   // Форматирование строк "Всего по направлению"
   const dataValues = dataRange.getValues();
   for (let i = 0; i < dataValues.length; i++) {
-    if (String(dataValues[i][2]).includes("--- ВСЕГО по направлению ---")) {
+    const cellText = String(dataValues[i][2] || "");
+    if (cellText.includes("--- ВСЕГО по направлению ---")) {
       sheet.getRange(i + 2, 1, 1, lastCol).setFontWeight('bold');
+    } else if (cellText.includes("--- В том числе ПРИОРИТЕТНЫЕ")) {
+      // Выделяем строку с общим количеством приоритетных заявлений
+      sheet.getRange(i + 2, 1, 1, lastCol).setBackground('#e6f7ff').setFontWeight('bold');
+    } else if (cellText.includes("(Приоритет 1)")) {
+      // Выделяем строки с приоритетными заявлениями по профилям
+      sheet.getRange(i + 2, 1, 1, lastCol).setBackground('#f0f8ff'); // Светло-голубой фон
     }
   }
   
